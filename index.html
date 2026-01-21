@@ -48,35 +48,25 @@
     font-size: clamp(220px, 28vw, 560px);
   }
 
-  .controls{
-    width: 100%;
-    display:flex;
-    gap: 12px;
-    justify-content:center;
-    flex-wrap:wrap;
-    margin-top: 1vh;
-  }
-  button{
-    font-size: clamp(16px, 2.1vw, 22px);
-    padding: 12px 18px;
-    border-radius: 14px;
-    border: 2px solid var(--blue);
-    background: #f4f7ff;
-    color: var(--blue);
-    cursor:pointer;
-    font-weight: 800;
-    min-width: 160px;
-    touch-action: manipulation;
-  }
-  button.primary{
-    background: var(--blue);
-    color:#fff;
-  }
-  button.secondary{
-    border-color:#777;
-    color:#333;
-    background:#fff;
-  }
+.controls button {
+  font-size: 18px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid #cfd8e3;
+  background: #f7f9fc;
+  color: #1e3a8a;
+}
+
+.controls button.primary {
+  background: #2563eb;
+  color: white;
+  border: none;
+}
+
+.controls {
+  opacity: 0.85;
+}
+
 </style>
 </head>
 
@@ -235,3 +225,4 @@ render();
 
 </body>
 </html>
+
