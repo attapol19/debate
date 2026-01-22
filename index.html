@@ -93,137 +93,74 @@
     </div>
   </div>
 
+<audio id="warn30" src="warn30.mp3"></audio>
+<audio id="end" src="end.mp3"></audio>
+
 <script>
-let total = 60;          // เวลาที่เหลือ (วิ)
-let selected = 60;       // เวลาที่เลือกไว้ล่าสุด (วิ) สำหรับรีเซ็ต
+let total = 60;
 let interval = null;
-let running = false;
+let warned30 = false;
 
-const wrap = document.getElementById("wrap");
 const el = document.getElementById("timer");
+const warn30 = document.getElementById("warn30");
+const end = document.getElementById("end");
 
-let audioCtx = null;
-function ensureAudio(){
-  try{
-    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if(audioCtx.state === "suspended") audioCtx.resume();
-  }catch(e){}
-}
-function beep(freq, duration, gain){
-  try{
-    ensureAudio();
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = "square";          // ดัง ทะลุลำโพง
-    o.frequency.value = freq;
-    g.gain.value = gain;
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start();
-    o.stop(audioCtx.currentTime + duration);
-  }catch(e){}
-}
-function tickBeep(){ beep(1200, 0.07, 0.10); }   // ติ๊ด 10 วิสุดท้าย
-function endBuzz(){                               // ออดเลิกเรียน (ยาว)
-  beep(180, 0.6, 0.40);
-  setTimeout(() => beep(180, 0.6, 0.40), 650);
-  setTimeout(() => beep(180, 0.9, 0.45), 1300);
-}
+function render() {
+  let m = Math.floor(total / 60);
+  let s = total % 60;
+  el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 
-function fmt(t){
-  const m = Math.floor(t/60);
-  const s = t%60;
-  return String(m).padStart(2,'0') + ":" + String(s).padStart(2,'0');
-}
-
-function render(){
-  // โหมด 10 วิสุดท้าย
-  if(total <= 10 && total > 0){
-    wrap.classList.add("big10");
-    el.textContent = String(total);
-  }else{
-    wrap.classList.remove("big10");
-    el.textContent = fmt(total);
+  // เปลี่ยนสีเมื่อใกล้หมดเวลา
+  if (total <= 10) {
+    el.style.color = "#d32f2f"; // แดง
+  } else {
+    el.style.color = "#0d47a1"; // น้ำเงิน
   }
-}
 
-function stopInterval(){
-  if(interval){
+  // เตือนครั้งเดียวตอนเหลือ 30 วิ
+  if (total === 30 && !warned30) {
+    warn30.currentTime = 0;
+    warn30.play();
+    warned30 = true;
+  }
+
+  if (total === 0) {
     clearInterval(interval);
-    interval = null;
+    end.currentTime = 0;
+    end.play();
   }
 }
 
-function setTime(sec){
-  stopInterval();
-  running = false;
-  selected = sec;
+function setTime(sec) {
+  clearInterval(interval);
   total = sec;
-  el.style.color = "";          // คืนค่าให้ render จัดการ
+  warned30 = false;
   render();
-  // ไม่เริ่มเดิน
 }
 
-function startOrResume(){
-  ensureAudio(); // สำคัญสำหรับมือถือ ให้เสียงทำงาน
-  if(running) return; // ถ้ากำลังเดินอยู่ ไม่ต้องทำอะไร
-
-  running = true;
-
-  // เริ่ม interval เดิน
-  stopInterval();
+function start() {
+  clearInterval(interval);
   interval = setInterval(() => {
-    // เตือน 1 นาที เฉพาะเมื่อ selected = 5 นาที
-    if(selected === 300 && total === 60){
-      // เปลี่ยนสีส้มชั่วคราว + beep สั้น
-      el.style.color = "var(--orange)";
-      beep(800, 0.15, 0.25);
-      // หลังจากนั้น render จะคุมสีต่อเอง (ยกเว้น 10 วิสุดท้าย)
-      setTimeout(() => { el.style.color = ""; render(); }, 300);
-    }
-
-    // 10 วิสุดท้าย: ติ๊ดทุกวินาที
-    if(total <= 10 && total > 0){
-      tickBeep();
-    }
-
-    render();
-
-    if(total > 0){
+    if (total > 0) {
       total--;
-    }else{
-      // หมดเวลา
-      stopInterval();
-      running = false;
-      endBuzz();
+      render();
     }
   }, 1000);
 }
 
-function pauseTimer(){
-  if(!running) return;
-  stopInterval();
-  running = false;
+function pause() {
+  clearInterval(interval);
 }
 
-function resetTimer(){
-  // รีเซ็ตกลับไปค่า selected (ไม่เริ่มเดิน)
-  setTime(selected);
+function reset() {
+  clearInterval(interval);
+  render();
 }
-
-/* คีย์ลัดบนคอม (เผื่อทีมเทคนิคชอบใช้) */
-document.addEventListener("keydown", (e) => {
-  if(e.key === "1") setTime(60);
-  if(e.key === "5") setTime(300);
-  if(e.key === "2") setTime(120);
-  if(e.key === "Enter") startOrResume(); // เริ่ม
-  if(e.code === "Space") pauseTimer();   // หยุด
-  if(e.key === "r" || e.key === "R") resetTimer();
-});
-
-render();
 </script>
+
 
 </body>
 </html>
+
 
 
