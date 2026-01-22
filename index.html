@@ -93,74 +93,115 @@
     </div>
   </div>
 
-<audio id="warn30" src="warn30.mp3"></audio>
-<audio id="end" src="end.mp3"></audio>
-
 <script>
 let total = 60;
 let interval = null;
 let warned30 = false;
+let selected = 60;
+let running = false;
 
 const el = document.getElementById("timer");
-const warn30 = document.getElementById("warn30");
-const end = document.getElementById("end");
+
+// ---- Web Audio (ไม่ต้องใช้ mp3) ----
+let audioCtx = null;
+function ensureAudio(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if(audioCtx.state === "suspended") audioCtx.resume();
+}
+function beep(freq=900, duration=0.12, gain=0.25, type="square"){
+  try{
+    ensureAudio();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    g.gain.value = gain;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    o.stop(audioCtx.currentTime + duration);
+  }catch(e){}
+}
+// เตือน 30 วิ (ครั้งเดียว)
+function warnBeep30(){
+  beep(880, 0.18, 0.22, "square");
+}
+// ออดหมดเวลา (ยาวแบบออดเลิกเรียน)
+function endBuzz(){
+  beep(180, 0.6, 0.40, "square");
+  setTimeout(() => beep(180, 0.6, 0.40, "square"), 650);
+  setTimeout(() => beep(180, 0.9, 0.45, "square"), 1300);
+}
+
+function fmt(t){
+  const m = Math.floor(t/60);
+  const s = t%60;
+  return String(m).padStart(2,'0') + ":" + String(s).padStart(2,'0');
+}
 
 function render() {
-  let m = Math.floor(total / 60);
-  let s = total % 60;
-  el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  el.textContent = fmt(total);
 
-  // เปลี่ยนสีเมื่อใกล้หมดเวลา
-  if (total <= 10) {
-    el.style.color = "#d32f2f"; // แดง
-  } else {
-    el.style.color = "#0d47a1"; // น้ำเงิน
-  }
-
-  // เตือนครั้งเดียวตอนเหลือ 30 วิ
-  if (total === 30 && !warned30) {
-    warn30.currentTime = 0;
-    warn30.play();
-    warned30 = true;
-  }
-
-  if (total === 0) {
-    clearInterval(interval);
-    end.currentTime = 0;
-    end.play();
-  }
+  // สีแดงเมื่อใกล้หมดเวลา (ไม่มีเสียง 10 วิแล้วตามที่ขอ)
+  if (total <= 10) el.style.color = "#d32f2f";
+  else el.style.color = "#0d47a1";
 }
 
 function setTime(sec) {
   clearInterval(interval);
+  running = false;
+  selected = sec;
   total = sec;
   warned30 = false;
   render();
 }
 
 function start() {
+  // iOS ต้องมีการแตะปุ่มเพื่อปลดล็อกเสียง -> เรียก ensureAudio ใน start
+  ensureAudio();
+
+  if(running) return;
+  running = true;
+
   clearInterval(interval);
   interval = setInterval(() => {
+    // เตือน 30 วินาที ครั้งเดียว ทุกโหมด
+    if (total === 30 && !warned30) {
+      warned30 = true;
+      warnBeep30();
+    }
+
+    render();
+
     if (total > 0) {
       total--;
-      render();
+    } else {
+      clearInterval(interval);
+      running = false;
+      endBuzz();
     }
   }, 1000);
 }
 
 function pause() {
   clearInterval(interval);
+  running = false;
 }
 
 function reset() {
-  clearInterval(interval);
-  render();
+  setTime(selected); // reset กลับไปเวลาที่เลือกไว้ล่าสุด (ไม่เริ่ม)
 }
+
+// เรียกครั้งแรก
+render();
 </script>
+
+
+
 
 
 </body>
 </html>
+
 
 
 
